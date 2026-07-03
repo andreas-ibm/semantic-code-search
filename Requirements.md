@@ -1,1 +1,23 @@
-... This will add enteries into the elastic index which will be inputed into a queory engine, from there, the engine will connect to the database to provide results for the user.
+## Requirements
+We need a system that can provide search results from our codebase that aren't a perfect match to our search term. 
+### Minimum
+- Semantic Search
+- Index large codebases
+- Multiple source codebases
+- MCP API
+- Containerised
+- Language support:
+  - C++
+  - Java
+  - Javascript
+ 
+### Additional desired features
+- [ ] Web UI
+- [ ] Lanuage support:
+  - [ ] Python
+  - [ ] Bash
+  - [ ] PL/1
+  - [ ] Rust
+  - [ ] Perl
+- [ ] Scheduled indexing
+- [ ] Triggered indexing
