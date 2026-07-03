@@ -1,0 +1,57 @@
+name: Update README
+
+# Trigger the workflow on push to main branch when specific markdown files change
+# Also allow manual triggering via workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Requirements.md'
+      - 'Architecture.md'
+      - 'Steps.md'
+  workflow_dispatch:
+
+# Set permissions for GITHUB_TOKEN to allow committing changes
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout the repository with full history
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      # Make the concatenation script executable
+      - name: Make script executable
+        run: chmod +x scripts/concat-readme.sh
+      
+      # Run the concatenation script to generate README.md
+      - name: Concatenate markdown files
+        run: ./scripts/concat-readme.sh
+      
+      # Configure git with GitHub Actions bot credentials
+      - name: Configure git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      # Check if README.md has changes and commit if it does
+      - name: Commit and push if changed
+        run: |
+          git add README.md
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to README.md"
+          else
+            echo "Changes detected in README.md, committing..."
+            git commit -m "chore: auto-update README.md from source files"
+            git push
+          fi
+
+# Made with Bob
