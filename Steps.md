@@ -1,8 +1,18 @@
-## Manual Setup Steps
+# Semantic Code Search — Approaches
 
-This document outlines the steps taken to set up the semantic code search infrastructure, including Elasticsearch deployment and code ingestion.
+This document tracks the different approaches explored for setting up semantic code search infrastructure, including setup steps, outcomes, and lessons learned.
 
-### 1. Acquire Machine and Install Prerequisites
+---
+
+## Approach 1: Elasticsearch + ELSER — ❌ Failed
+
+**Outcome:** This approach was abandoned. Deploying ELSER (Elastic Learned Sparse EncodeR), which is required for semantic/vector search in Elasticsearch, requires a paid Elastic licence. It is not available on the free/basic tier.
+
+### Manual Setup Steps
+
+This section outlines the steps taken to set up the Elasticsearch-based infrastructure before the licence limitation was discovered.
+
+#### 1. Acquire Machine and Install Prerequisites
 
 Install required packages on the machine:
 
@@ -19,18 +29,18 @@ Verify Node.js installation:
 node -v
 ```
 
-### 2. Deploy Elasticsearch with Docker/Podman
+#### 2. Deploy Elasticsearch with Docker/Podman
 
 Following the [Elasticsearch Docker installation guide](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/install-elasticsearch-docker-basic), we deployed Elasticsearch using Podman (Docker-compatible).
 
-#### Create Docker Network
+##### Create Docker Network
 ```bash
 # Note: The exact command wasn't in bash history, but this is the standard approach
 # from the Elasticsearch documentation
 podman network create elastic
 ```
 
-#### Start Elasticsearch Container
+##### Start Elasticsearch Container
 ```bash
 # Run Elasticsearch container with 1GB memory limit
 # For machine learning features (like ELSER), use 6GB instead
@@ -44,7 +54,7 @@ The command prints the `elastic` user password and enrollment token. Store the p
 export ELASTIC_PASSWORD="your_generated_password"
 ```
 
-#### Extract SSL Certificate
+##### Extract SSL Certificate
 
 Copy the SSL certificate from the container to the host machine:
 
@@ -53,7 +63,7 @@ sudo podman cp es01:/usr/share/elasticsearch/config/certs/http_ca.crt /home/amar
 sudo chmod a+r ${HOME}/http_ca.crt
 ```
 
-#### Verify Elasticsearch is Running
+##### Verify Elasticsearch is Running
 
 Test the connection using curl:
 
@@ -65,7 +75,7 @@ curl --cacert ${HOME}/http_ca.crt -u elastic:$ELASTIC_PASSWORD https://localhost
 curl -k -u elastic:$ELASTIC_PASSWORD https://localhost:9200
 ```
 
-### 3. Trust the SSL Certificate System-Wide
+#### 3. Trust the SSL Certificate System-Wide
 
 To avoid needing to specify the certificate with every request, we added it to the system's trusted certificates. This follows guidance from [Baeldung's CA Certificate Management guide](https://www.baeldung.com/linux/ca-certificate-management).
 
@@ -81,7 +91,7 @@ After this, you can make requests without specifying the certificate:
 curl -u elastic:$ELASTIC_PASSWORD https://localhost:9200
 ```
 
-### 4. Set Up the Code Indexer
+#### 4. Set Up the Code Indexer
 
 Clone the [semantic-code-search-indexer](https://github.com/elastic/semantic-code-search-indexer) repository:
 
@@ -91,7 +101,7 @@ git clone https://github.com/elastic/semantic-code-search-indexer.git
 cd semantic-code-search-indexer/
 ```
 
-#### Pin to Stable Version
+##### Pin to Stable Version
 
 As noted in the indexer's README, the `main` branch may contain breaking changes. We pinned to a known-good commit from October 2025:
 
@@ -99,14 +109,14 @@ As noted in the indexer's README, the `main` branch may contain breaking changes
 git checkout 2fe4a9a4fefe84252a9c5ffe95875162bdb79cd0
 ```
 
-#### Install Dependencies and Build
+##### Install Dependencies and Build
 
 ```bash
 npm install
 npm run build
 ```
 
-### 5. Index Code Repositories
+#### 5. Index Code Repositories
 
 With Elasticsearch running and the indexer built, index your code repositories:
 
@@ -133,3 +143,15 @@ The `--clean` flag removes any existing index data before indexing. Omit it for 
 - [Baeldung: CA Certificate Management on Linux](https://www.baeldung.com/linux/ca-certificate-management)
 - [Semantic Code Search Indexer (GitHub)](https://github.com/elastic/semantic-code-search-indexer)
 - [Indexer Documentation (pinned version)](https://github.com/elastic/semantic-code-search-indexer/blob/2fe4a9a4fefe84252a9c5ffe95875162bdb79cd0/README.md)
+
+---
+
+## Approach 2: CocoIndex — 🔄 In Progress
+
+> Setup steps and outcome to be documented.
+
+---
+
+## Future Approaches
+
+> Additional approaches to be explored and documented here.
