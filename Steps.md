@@ -691,6 +691,29 @@ python main_hybrid.py           # hybrid, interactive
 python main_hybrid.py --mode keyword   # keyword-only, interactive
 ```
 
+### Results
+
+Hybrid mode with `python main_hybrid.py "loadPolicy"` produced:
+
+```
+[0.0164|semantic] …/AsymmetricBindingBuilder.java (L19-L36)   — import block (not relevant)
+[0.0164|keyword]  …/KerberosPolicyTest.java (L89-L103)         — calls loadPolicy(policyFile) ✅ usage found
+[0.0161|semantic] …/RampartUtil.java (L283-L295)               — unrelated utility method
+[0.0161|keyword]  …/KerberosPolicyTest.java (L105-L119)        — calls loadPolicy(policyFile) ✅ usage found
+[0.0159|semantic] …/SupportingPolicyData.java (L20-L42)        — unrelated policy class
+```
+
+**Assessment — mostly successful, but with a gap:**
+
+| What worked | What didn't |
+|---|---|
+| Keyword leg found *usages* of `loadPolicy` (call sites in test files) | Neither leg returned the *definition* of `loadPolicy` as a top-5 result |
+| Semantic leg no longer dominates with irrelevant import blocks alone | RRF scores are very close (0.0159–0.0164), so ranking is essentially random at this distance |
+
+**Root cause of the definition miss:** The `ILIKE '%loadPolicy%'` path matches any chunk containing the token — call sites, imports, and the definition all qualify. With `TOP_K = 5` and many call sites in the codebase, the definition chunk can be pushed out of the top 5 by sheer volume of usages. The definition is almost certainly in the index; it just ranked 6th or lower.
+
+**Known remaining limitation:** Pure substring search cannot distinguish a *definition* (`private static Policy loadPolicy(...)`) from a *usage* (`policy = loadPolicy(file)`). Fixing this requires symbol-aware indexing (see Open questions below) — storing definitions and usages as separate, typed rows so that a query like `loadPolicy` can filter to `kind = "definition"` directly.
+
 ### Notes
 
 - `migrate_hybrid.sql` is idempotent (`CREATE INDEX IF NOT EXISTS`, `CREATE EXTENSION IF NOT EXISTS`) — safe to run more than once.
